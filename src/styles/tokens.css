@@ -1,0 +1,163 @@
+/*
+ * Scribble design tokens.
+ *
+ * Every colour, radius, shadow and spacing decision in the application is
+ * expressed here. Components must never hard-code a colour value, so the visual
+ * identity can be replaced later by editing this file alone.
+ *
+ * This is a deliberately temporary, neutral theme. It is not a brand identity.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ---- Surfaces -------------------------------------------------------- */
+  --sb-deskpad: #f6f3ee; /* warm off-white deskpad */
+  --sb-surface: #fbf9f5; /* panels, top bar, toolbar */
+  --sb-surface-raised: #ffffff;
+  --sb-surface-sunken: #efebe3;
+  --sb-overlay-scrim: rgb(36 34 32 / 32%);
+
+  /* ---- Grid ------------------------------------------------------------ */
+  --sb-grid: #d9d3c8; /* very faint neutral dot grid */
+  --sb-grid-strong: #cdc6b8;
+
+  /* ---- Text ------------------------------------------------------------ */
+  --sb-text: #242220; /* charcoal */
+  --sb-text-muted: #5c574f;
+  --sb-text-subtle: #857f75;
+  --sb-text-on-accent: #ffffff;
+
+  /* ---- Lines ----------------------------------------------------------- */
+  --sb-border: #ddd6ca;
+  --sb-border-strong: #c4bbab;
+
+  /* ---- Accent (one restrained accent colour) --------------------------- */
+  --sb-accent: #2f7c86;
+  --sb-accent-strong: #23606a;
+  --sb-accent-soft: #e2eef0;
+  --sb-focus: #23606a;
+
+  /* ---- Status ---------------------------------------------------------- */
+  --sb-danger: #9b3226;
+  --sb-danger-soft: #f6e6e3;
+  --sb-warning: #8a5a12;
+  --sb-warning-soft: #f7ecd9;
+  --sb-success: #2c6a4a;
+  --sb-success-soft: #e2efe8;
+
+  /* ---- Note colours ---------------------------------------------------- */
+  /* Each note colour must be legible with --sb-text and is always paired with
+     a text label or icon, never used as the only carrier of meaning. */
+  --sb-note-neutral: #fbf9f5;
+  --sb-note-sand: #f7efdc;
+  --sb-note-sage: #e9f0e4;
+  --sb-note-sky: #e4edf3;
+  --sb-note-rose: #f7e8e5;
+  --sb-note-lilac: #ece7f2;
+  --sb-note-slate: #e8e8e6;
+
+  /* ---- Ink palette ----------------------------------------------------- */
+  --sb-ink-1: #242220;
+  --sb-ink-2: #2f7c86;
+  --sb-ink-3: #9b3226;
+  --sb-ink-4: #2c6a4a;
+  --sb-ink-5: #6b4d9b;
+
+  /* ---- Geometry -------------------------------------------------------- */
+  --sb-radius-card: 12px;
+  --sb-radius-control: 10px;
+  --sb-radius-pill: 9999px;
+  --sb-shadow-soft: 0 1px 2px rgb(36 34 32 / 6%), 0 4px 14px rgb(36 34 32 / 6%);
+  --sb-shadow-float: 0 2px 6px rgb(36 34 32 / 8%), 0 12px 28px rgb(36 34 32 / 14%);
+  --sb-shadow-card: 0 1px 1px rgb(36 34 32 / 5%), 0 2px 8px rgb(36 34 32 / 7%);
+
+  /* ---- Typography (system fonts only; never fetched from the network) --- */
+  --sb-font:
+    'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial,
+    sans-serif;
+  --sb-font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+  --sb-font-mono: 'Cascadia Mono', 'Consolas', ui-monospace, monospace;
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --sb-motion-fast: 120ms;
+  --sb-motion-normal: 200ms;
+  --sb-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---- Layout ---------------------------------------------------------- */
+  --sb-topbar-height: 52px;
+  --sb-touch-target: 44px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --sb-deskpad: #1c1b1a;
+  --sb-surface: #262523;
+  --sb-surface-raised: #2f2d2b;
+  --sb-surface-sunken: #171615;
+  --sb-overlay-scrim: rgb(0 0 0 / 55%);
+
+  --sb-grid: #3a3835;
+  --sb-grid-strong: #474441;
+
+  --sb-text: #ede9e3;
+  --sb-text-muted: #b6b0a7;
+  --sb-text-subtle: #8f8a82;
+  --sb-text-on-accent: #0f1516;
+
+  --sb-border: #3c3936;
+  --sb-border-strong: #56524d;
+
+  --sb-accent: #6fc3cd;
+  --sb-accent-strong: #93d6de;
+  --sb-accent-soft: #24393c;
+  --sb-focus: #93d6de;
+
+  --sb-danger: #e79286;
+  --sb-danger-soft: #3a2521;
+  --sb-warning: #e0b678;
+  --sb-warning-soft: #362a19;
+  --sb-success: #82c4a0;
+  --sb-success-soft: #1e3129;
+
+  --sb-note-neutral: #2f2d2b;
+  --sb-note-sand: #3a3324;
+  --sb-note-sage: #26332a;
+  --sb-note-sky: #23303a;
+  --sb-note-rose: #3a2a28;
+  --sb-note-lilac: #302a3a;
+  --sb-note-slate: #333331;
+
+  --sb-ink-1: #ede9e3;
+  --sb-ink-2: #6fc3cd;
+  --sb-ink-3: #e79286;
+  --sb-ink-4: #82c4a0;
+  --sb-ink-5: #b9a2e0;
+
+  --sb-shadow-soft: 0 1px 2px rgb(0 0 0 / 40%), 0 4px 14px rgb(0 0 0 / 32%);
+  --sb-shadow-float: 0 2px 6px rgb(0 0 0 / 45%), 0 12px 28px rgb(0 0 0 / 45%);
+  --sb-shadow-card: 0 1px 1px rgb(0 0 0 / 35%), 0 2px 8px rgb(0 0 0 / 35%);
+}
+
+/* Windows high-contrast / forced-colours support. */
+@media (forced-colors: active) {
+  :root {
+    --sb-deskpad: Canvas;
+    --sb-surface: Canvas;
+    --sb-surface-raised: Canvas;
+    --sb-surface-sunken: Canvas;
+    --sb-text: CanvasText;
+    --sb-text-muted: CanvasText;
+    --sb-text-subtle: CanvasText;
+    --sb-border: CanvasText;
+    --sb-border-strong: CanvasText;
+    --sb-accent: Highlight;
+    --sb-accent-strong: Highlight;
+    --sb-focus: Highlight;
+    --sb-grid: GrayText;
+    --sb-shadow-soft: none;
+    --sb-shadow-float: none;
+    --sb-shadow-card: none;
+  }
+}

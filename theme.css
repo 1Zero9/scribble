@@ -1,0 +1,137 @@
+/* Scribble Digital Deskpad Theme */
+
+:root {
+  /* Color Palette */
+  --bg-deskpad: #f6f3ee;
+  --bg-surface: #fbf9f5;
+  --bg-sticky-note: #fbf5df;
+  --grid-line: #e3ded5;
+  --text-primary: #1b324b;
+  --text-secondary: #5a6e82;
+  --text-muted: #8fa0b0;
+  --accent-ink: #1e3a5f;
+  --accent-teal: #4ea8b6;
+  --border-subtle: #dcd6cb;
+
+  /* Typography */
+  --font-main: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-handwriting: "Caveat", "Architects Daughter", cursive, sans-serif;
+
+  /* Spacing & Geometry */
+  --radius-card: 16px;
+  --radius-btn: 12px;
+  --shadow-soft: 0 4px 14px rgba(27, 50, 75, 0.06);
+  --shadow-float: 0 8px 24px rgba(27, 50, 75, 0.12);
+}
+
+/* Deskpad Canvas Background */
+body {
+  margin: 0;
+  padding: 2rem;
+  background-color: var(--bg-deskpad);
+  background-image: 
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* Main Freeform Work Surface */
+.deskpad-surface {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+  min-height: calc(100vh - 4rem);
+  padding: 2.5rem;
+  position: relative;
+}
+
+/* Sticky / Pinned Notes */
+.note-pinned {
+  background-color: var(--bg-sticky-note);
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(27, 50, 75, 0.08);
+  color: var(--accent-ink);
+  font-family: var(--font-handwriting);
+  font-size: 1.25rem;
+  line-height: 1.4;
+  padding: 1.5rem;
+  position: relative;
+  transform: rotate(-1.5deg);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 260px;
+}
+
+.note-pinned:hover {
+  box-shadow: var(--shadow-float);
+  transform: rotate(0deg) scale(1.02);
+}
+
+/* Washi Tape Accent */
+.note-pinned::before {
+  background-color: rgba(230, 220, 200, 0.7);
+  content: "";
+  height: 16px;
+  left: 50%;
+  position: absolute;
+  top: -8px;
+  transform: translateX(-50%);
+  width: 70px;
+}
+
+/* Floating Input Toolbar */
+.toolbar-dock {
+  align-items: center;
+  backdrop-filter: blur(12px);
+  background: rgba(251, 249, 245, 0.9);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
+  bottom: 2rem;
+  box-shadow: var(--shadow-float);
+  display: flex;
+  gap: 0.75rem;
+  left: 50%;
+  padding: 0.5rem 0.75rem;
+  position: fixed;
+  transform: translateX(-50%);
+}
+
+.toolbar-button {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-btn);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.15s ease;
+  width: 44px;
+}
+
+.toolbar-button:hover {
+  background-color: rgba(30, 58, 95, 0.08);
+  color: var(--accent-ink);
+}
+
+.toolbar-button.active {
+  background-color: var(--accent-ink);
+  color: #ffffff;
+}
+
+/* Freehand Drawing Canvas Overlay */
+.ink-layer {
+  cursor: crosshair;
+  height: 100%;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}

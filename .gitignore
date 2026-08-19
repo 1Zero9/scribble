@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+src-tauri/target/
+src-tauri/gen/
+
+# Test output
+playwright-report/
+test-results/
+coverage/
+
+# Logs
+*.log
+npm-install.log
+
+# Local application data must never be committed.
+# Scribble stores its database in the OS application-data directory.
+*.db
+*.db-journal
+*.sqlite
+*.scribble.zip
+scribble-data/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/

@@ -1,0 +1,281 @@
+@import './tokens.css';
+@import 'tailwindcss';
+
+/* Map Scribble design tokens into Tailwind's theme so utilities such as
+   `bg-surface` or `text-muted` resolve to the same single source of truth. */
+@theme inline {
+  --color-deskpad: var(--sb-deskpad);
+  --color-surface: var(--sb-surface);
+  --color-raised: var(--sb-surface-raised);
+  --color-sunken: var(--sb-surface-sunken);
+  --color-ink: var(--sb-text);
+  --color-muted: var(--sb-text-muted);
+  --color-subtle: var(--sb-text-subtle);
+  --color-line: var(--sb-border);
+  --color-line-strong: var(--sb-border-strong);
+  --color-accent: var(--sb-accent);
+  --color-accent-strong: var(--sb-accent-strong);
+  --color-accent-soft: var(--sb-accent-soft);
+  --color-danger: var(--sb-danger);
+  --color-danger-soft: var(--sb-danger-soft);
+  --color-warning: var(--sb-warning);
+  --color-warning-soft: var(--sb-warning-soft);
+  --color-success: var(--sb-success);
+  --color-success-soft: var(--sb-success-soft);
+  --color-on-accent: var(--sb-text-on-accent);
+
+  --font-sans: var(--sb-font);
+  --font-display: var(--sb-font-display);
+  --font-mono: var(--sb-font-mono);
+
+  --radius-card: var(--sb-radius-card);
+  --radius-control: var(--sb-radius-control);
+
+  --shadow-soft: var(--sb-shadow-soft);
+  --shadow-float: var(--sb-shadow-float);
+  --shadow-card: var(--sb-shadow-card);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--sb-deskpad);
+    color: var(--sb-text);
+    font-family: var(--sb-font);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* A single, consistently visible focus indicator everywhere. */
+  :focus-visible {
+    outline: 2px solid var(--sb-focus);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--sb-accent-soft);
+    color: var(--sb-text);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+}
+
+@layer components {
+  /* Visually hidden but available to assistive technology. */
+  .sb-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .sb-panel {
+    background: var(--sb-surface);
+    border: 1px solid var(--sb-border);
+    border-radius: var(--sb-radius-card);
+    box-shadow: var(--sb-shadow-float);
+    color: var(--sb-text);
+  }
+
+  .sb-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 32px;
+    padding: 0 0.7rem;
+    border: 1px solid var(--sb-border);
+    border-radius: var(--sb-radius-control);
+    background: var(--sb-surface-raised);
+    color: var(--sb-text);
+    cursor: pointer;
+    transition:
+      background var(--sb-motion-fast) var(--sb-ease),
+      border-color var(--sb-motion-fast) var(--sb-ease);
+  }
+
+  .sb-button:hover:not(:disabled) {
+    background: var(--sb-surface-sunken);
+    border-color: var(--sb-border-strong);
+  }
+
+  .sb-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .sb-button--primary {
+    background: var(--sb-accent);
+    border-color: var(--sb-accent);
+    color: var(--sb-text-on-accent);
+  }
+
+  .sb-button--primary:hover:not(:disabled) {
+    background: var(--sb-accent-strong);
+    border-color: var(--sb-accent-strong);
+  }
+
+  .sb-button--danger {
+    color: var(--sb-danger);
+    border-color: var(--sb-danger);
+    background: var(--sb-danger-soft);
+  }
+
+  .sb-button--quiet {
+    background: transparent;
+    border-color: transparent;
+  }
+
+  .sb-button--quiet:hover:not(:disabled) {
+    background: var(--sb-surface-sunken);
+    border-color: var(--sb-border);
+  }
+
+  .sb-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--sb-touch-target);
+    height: var(--sb-touch-target);
+    border: 1px solid transparent;
+    border-radius: var(--sb-radius-control);
+    background: transparent;
+    color: var(--sb-text);
+    cursor: pointer;
+  }
+
+  .sb-icon-button:hover:not(:disabled) {
+    background: var(--sb-surface-sunken);
+    border-color: var(--sb-border);
+  }
+
+  .sb-icon-button[aria-pressed='true'] {
+    background: var(--sb-accent-soft);
+    border-color: var(--sb-accent);
+    color: var(--sb-accent-strong);
+  }
+
+  .sb-input {
+    width: 100%;
+    min-height: 32px;
+    padding: 0.25rem 0.5rem;
+    background: var(--sb-surface-raised);
+    border: 1px solid var(--sb-border);
+    border-radius: var(--sb-radius-control);
+    color: var(--sb-text);
+  }
+
+  .sb-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.1rem 0.5rem;
+    font-size: 12px;
+    border: 1px solid var(--sb-border);
+    border-radius: var(--sb-radius-pill);
+    background: var(--sb-surface-sunken);
+    color: var(--sb-text-muted);
+  }
+}
+
+/* Rich-text content inside note cards. Content is sanitised before it is
+   inserted; these rules only control presentation. */
+.sb-rich-text {
+  outline: none;
+  overflow-wrap: anywhere;
+}
+
+.sb-rich-text h1 {
+  font-size: 1.35em;
+  font-weight: 650;
+  margin: 0.2em 0 0.3em;
+  font-family: var(--sb-font-display);
+}
+
+.sb-rich-text h2 {
+  font-size: 1.15em;
+  font-weight: 650;
+  margin: 0.2em 0 0.3em;
+}
+
+.sb-rich-text p {
+  margin: 0 0 0.4em;
+}
+
+.sb-rich-text ul,
+.sb-rich-text ol {
+  margin: 0 0 0.4em;
+  padding-left: 1.25em;
+}
+
+.sb-rich-text ul {
+  list-style: disc;
+}
+
+.sb-rich-text ol {
+  list-style: decimal;
+}
+
+.sb-rich-text a {
+  color: var(--sb-accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.sb-rich-text blockquote {
+  margin: 0 0 0.4em;
+  padding-left: 0.6em;
+  border-left: 3px solid var(--sb-border-strong);
+  color: var(--sb-text-muted);
+}
+
+.sb-rich-text code {
+  font-family: var(--sb-font-mono);
+  font-size: 0.92em;
+  background: var(--sb-surface-sunken);
+  padding: 0 0.2em;
+  border-radius: 3px;
+}
+
+.sb-rich-text:empty::before,
+.sb-rich-text[data-empty='true']::before {
+  content: attr(data-placeholder);
+  color: var(--sb-text-subtle);
+  pointer-events: none;
+}
+
+/* Respect the operating system's reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
