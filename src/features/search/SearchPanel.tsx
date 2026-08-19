@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FileText, Inbox, Search as SearchIcon } from 'lucide-react';
 import { ITEM_TYPES, ITEM_TYPE_LABELS, type ItemType } from '@/types/domain';
 import { formatRelative, type DateFilter } from '@/lib/time';
-import { DEFAULT_FILTERS, padDisplayName, search } from '@/services/search/search';
+import { DEFAULT_FILTERS, padDisplayName, projectsInUse, search } from '@/services/search/search';
 import { Panel } from '@/components/Panel';
 import { useDeskStore } from '@/store/deskStore';
 import { useUiStore } from '@/store/uiStore';
@@ -24,6 +24,7 @@ export function SearchPanel() {
   const [types, setTypes] = useState<ItemType[]>([]);
   const [date, setDate] = useState<DateFilter>('any');
   const [includeDeleted, setIncludeDeleted] = useState(false);
+  const [project, setProject] = useState<string | null>(null);
 
   useEffect(() => {
     void refreshDrawer();
@@ -38,9 +39,18 @@ export function SearchPanel() {
     [drawer, includeDeleted],
   );
 
+  const projects = useMemo(() => projectsInUse(pool), [pool]);
+
   const results = useMemo(
-    () => search(pool, drawer.pads, query, { ...DEFAULT_FILTERS, types, date, includeDeleted }),
-    [pool, drawer.pads, query, types, date, includeDeleted],
+    () =>
+      search(pool, drawer.pads, query, {
+        ...DEFAULT_FILTERS,
+        types,
+        date,
+        includeDeleted,
+        project,
+      }),
+    [pool, drawer.pads, query, types, date, includeDeleted, project],
   );
 
   function toggleType(type: ItemType): void {
@@ -111,13 +121,34 @@ export function SearchPanel() {
           />
           Include recently deleted
         </label>
+
+        {projects.length > 0 ? (
+          <label className="flex items-center gap-2 text-xs">
+            <span>Project</span>
+            <select
+              className="sb-input"
+              style={{ width: 'auto' }}
+              value={project ?? ''}
+              onChange={(event) =>
+                setProject(event.target.value === '' ? null : event.target.value)
+              }
+            >
+              <option value="">Any project</option>
+              {projects.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
       </div>
 
       <div className="mt-4">
-        {query.trim() === '' ? (
+        {query.trim() === '' && project === null ? (
           <EmptyMessage
             icon={<SearchIcon size={26} />}
-            message="Start typing to search your pads and notes."
+            message="Start typing to search your pads and notes, or filter by project."
           />
         ) : results.length === 0 ? (
           <EmptyMessage icon={<Inbox size={26} />} message="Nothing matched that search." />

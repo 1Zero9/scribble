@@ -6,6 +6,7 @@ import {
   distribute,
   findFreePosition,
   normaliseRect,
+  overlapFraction,
   padToScreen,
   rectsIntersect,
   screenToPad,
@@ -80,6 +81,13 @@ describe('selection geometry', () => {
     const a = { x: 0, y: 0, width: 10, height: 10 };
     expect(rectsIntersect(a, { x: 5, y: 5, width: 10, height: 10 })).toBe(true);
     expect(rectsIntersect(a, { x: 10, y: 0, width: 10, height: 10 })).toBe(false);
+  });
+
+  it('scores overlap as a fraction of the smaller rectangle', () => {
+    const a = { x: 0, y: 0, width: 100, height: 100 };
+    expect(overlapFraction(a, { x: 200, y: 200, width: 50, height: 50 })).toBe(0);
+    expect(overlapFraction(a, { x: 0, y: 0, width: 50, height: 50 })).toBe(1);
+    expect(overlapFraction(a, { x: 50, y: 0, width: 100, height: 100 })).toBeCloseTo(0.5);
   });
 
   it('computes a bounding box', () => {

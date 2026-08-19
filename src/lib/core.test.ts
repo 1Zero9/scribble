@@ -138,6 +138,8 @@ function makeItem(id: string, text: string, updatedAt = '2026-08-18T09:00:00.000
     zIndex: 0,
     colour: 'neutral',
     pinned: false,
+    project: null,
+    bundleId: null,
     createdAt: updatedAt,
     updatedAt,
     archivedAt: null,
@@ -191,6 +193,7 @@ describe('search', () => {
         date: 'any',
         includeArchived: true,
         includeDeleted: true,
+        project: null,
       }),
     ).toHaveLength(3);
   });

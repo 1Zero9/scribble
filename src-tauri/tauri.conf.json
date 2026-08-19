@@ -24,7 +24,7 @@
         "center": true,
         "visible": true,
         "skipTaskbar": false,
-        "dragDropEnabled": true,
+        "dragDropEnabled": false,
         "zoomHotkeysEnabled": true
       }
     ],

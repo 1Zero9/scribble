@@ -37,7 +37,7 @@ async function makeNote(padId: string, html = 'Hello') {
 describe('migrations', () => {
   it('creates every table and is safe to run twice', async () => {
     const db = createNodeDatabase();
-    expect(await runMigrations(db)).toBe(1);
+    expect(await runMigrations(db)).toBe(2);
     expect(await runMigrations(db)).toBe(0);
 
     const tables = await db.select<{ name: string }>(
@@ -241,6 +241,19 @@ describe('item repository', () => {
     await storage.pads.purge(pad.id);
     expect(await storage.items.listAll({ includeDeleted: true })).toHaveLength(0);
   });
+
+  it('defaults project and bundleId to null, and round-trips them once set', async () => {
+    const pad = await makePad();
+    const note = await makeNote(pad.id);
+    expect(note.project).toBeNull();
+    expect(note.bundleId).toBeNull();
+
+    const bundleId = newId();
+    await storage.items.update(note.id, { project: 'Operation Falcon', bundleId });
+    const loaded = await storage.items.get(note.id);
+    expect(loaded?.project).toBe('Operation Falcon');
+    expect(loaded?.bundleId).toBe(bundleId);
+  });
 });
 
 describe('ink repository', () => {
@@ -278,6 +291,23 @@ describe('ink repository', () => {
 
     await storage.ink.restore([stroke.id]);
     expect(await storage.ink.listByPad(pad.id)).toHaveLength(1);
+  });
+
+  it('updates a stroke’s colour, width and points in place', async () => {
+    const pad = await makePad();
+    const stroke = await storage.ink.create({
+      id: newId(),
+      padId: pad.id,
+      colour: '#000',
+      width: 2,
+      points: [{ x: 0, y: 0, pressure: 0.5 }],
+    });
+
+    const moved = [{ x: 10, y: 12, pressure: 0.6 }];
+    await storage.ink.update(stroke.id, { colour: '#fff', width: 5, points: moved });
+
+    const [loaded] = await storage.ink.listByPad(pad.id);
+    expect(loaded).toMatchObject({ colour: '#fff', width: 5, points: moved });
   });
 });
 

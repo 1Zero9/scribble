@@ -27,6 +27,7 @@ async function seed(): Promise<Pad> {
     zIndex: 1,
     colour: 'sand',
     pinned: false,
+    project: 'Operation Falcon',
   });
   await storage.items.create({
     id: newId(),
@@ -135,7 +136,9 @@ describe('import', () => {
     expect(summary).toMatchObject({ pads: 1, items: 2, ink: 1 });
     const [pad] = await fresh.pads.list();
     expect(pad?.name).toBe('Tuesday');
-    expect(await fresh.items.listByPad(pad?.id ?? '')).toHaveLength(2);
+    const items = await fresh.items.listByPad(pad?.id ?? '');
+    expect(items).toHaveLength(2);
+    expect(items.find((item) => item.itemType === 'text')?.project).toBe('Operation Falcon');
   });
 
   it('never overwrites existing material', async () => {

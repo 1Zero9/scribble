@@ -227,6 +227,7 @@ export async function importBundle(storage: Storage, bytes: Uint8Array): Promise
       zIndex: item.zIndex,
       colour: item.colour,
       pinned: item.pinned,
+      project: item.project ?? null,
     });
     summary.items += 1;
   }

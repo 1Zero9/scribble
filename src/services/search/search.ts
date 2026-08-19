@@ -16,6 +16,8 @@ export interface SearchFilters {
   date: DateFilter;
   includeArchived: boolean;
   includeDeleted: boolean;
+  /** Restricts results to notes tagged with exactly this project, when set. */
+  project: string | null;
 }
 
 export const DEFAULT_FILTERS: SearchFilters = {
@@ -23,7 +25,15 @@ export const DEFAULT_FILTERS: SearchFilters = {
   date: 'any',
   includeArchived: true,
   includeDeleted: false,
+  project: null,
 };
+
+/** The distinct, non-empty project tags in use, for building a filter list. */
+export function projectsInUse(items: readonly Item[]): string[] {
+  const seen = new Set<string>();
+  for (const item of items) if (item.project) seen.add(item.project);
+  return [...seen].sort((a, b) => a.localeCompare(b));
+}
 
 export interface ItemResult {
   kind: 'item';
@@ -91,10 +101,11 @@ export function searchItems(
       if (!filters.includeDeleted && item.deletedAt !== null) return false;
       if (!filters.includeArchived && item.archivedAt !== null) return false;
       if (filters.types.length > 0 && !filters.types.includes(item.itemType)) return false;
+      if (filters.project !== null && item.project !== filters.project) return false;
       return isWithinDateFilter(item.updatedAt, filters.date, reference);
     })
     .map((item) => {
-      const text = itemText(item);
+      const text = item.project ? `${itemText(item)} ${item.project}` : itemText(item);
       const score = tokens.length === 0 ? 1 : scoreText(text, tokens);
       return {
         kind: 'item' as const,
@@ -118,6 +129,7 @@ export function search(
   filters: SearchFilters = DEFAULT_FILTERS,
   reference: Date = new Date(),
 ): SearchResult[] {
-  if (query.trim() === '') return [];
+  // Browsing a project needs no typed text; everything else does.
+  if (query.trim() === '' && filters.project === null) return [];
   return [...searchPads(pads, query), ...searchItems(items, pads, query, filters, reference)];
 }

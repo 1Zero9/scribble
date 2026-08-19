@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Download, Lock, ShieldCheck, TriangleAlert, Upload, Trash2 } from 'lucide-react';
 import { GRID_TYPES, type GridType } from '@/types/domain';
+import { APP_VERSION } from '@/lib/version';
 import { AUTO_LOCK_OPTIONS, RETENTION_OPTIONS } from '@/services/settings/settings';
 import { detectDictation, type DictationCapability } from '@/services/dictation/dictationService';
 import { buildExport, importBundle } from '@/services/exportImport/bundle';
@@ -307,6 +308,14 @@ export function SettingsPanel() {
         </button>
         <p className="text-xs" style={{ color: 'var(--sb-text-muted)' }}>
           Removes every pad, note, pen stroke and preference from this device.
+        </p>
+      </Section>
+
+      <Section title="About">
+        <p className="text-sm">Scribble v{APP_VERSION}</p>
+        <p className="text-xs" style={{ color: 'var(--sb-text-muted)' }}>
+          An early prototype for discussion and user testing. See <code>KNOWN_LIMITATIONS.md</code>{' '}
+          for what is incomplete.
         </p>
       </Section>
 

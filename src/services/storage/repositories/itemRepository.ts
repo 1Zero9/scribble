@@ -5,7 +5,8 @@ import { toItem, type ItemRow } from './mappers';
 import type { ItemPatch, ItemRepository, NewItem } from './types';
 
 const SELECT = `SELECT id, pad_id, item_type, content, position_x, position_y, width, height,
-  z_index, colour, pinned, created_at, updated_at, archived_at, deleted_at FROM items`;
+  z_index, colour, pinned, project, bundle_id, created_at, updated_at, archived_at, deleted_at
+  FROM items`;
 
 const COLUMNS: Record<keyof ItemPatch, string> = {
   itemType: 'item_type',
@@ -17,6 +18,8 @@ const COLUMNS: Record<keyof ItemPatch, string> = {
   zIndex: 'z_index',
   colour: 'colour',
   pinned: 'pinned',
+  project: 'project',
+  bundleId: 'bundle_id',
   updatedAt: 'updated_at',
   archivedAt: 'archived_at',
   deletedAt: 'deleted_at',
@@ -56,6 +59,8 @@ export function createItemRepository(db: Database): ItemRepository {
     const timestamp = now();
     const record: Item = {
       ...item,
+      project: item.project ?? null,
+      bundleId: item.bundleId ?? null,
       createdAt: item.createdAt ?? timestamp,
       updatedAt: item.updatedAt ?? timestamp,
       archivedAt: null,
@@ -64,8 +69,8 @@ export function createItemRepository(db: Database): ItemRepository {
 
     await db.execute(
       `INSERT INTO items (id, pad_id, item_type, content, position_x, position_y, width, height,
-        z_index, colour, pinned, created_at, updated_at, archived_at, deleted_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        z_index, colour, pinned, project, bundle_id, created_at, updated_at, archived_at, deleted_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         record.id,
         record.padId,
@@ -78,6 +83,8 @@ export function createItemRepository(db: Database): ItemRepository {
         record.zIndex,
         record.colour,
         toSqlBool(record.pinned),
+        record.project,
+        record.bundleId,
         record.createdAt,
         record.updatedAt,
         null,

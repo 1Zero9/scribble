@@ -52,6 +52,8 @@ export interface ItemRow {
   z_index: number;
   colour: string;
   pinned: number;
+  project: string | null;
+  bundle_id: string | null;
   created_at: string;
   updated_at: string;
   archived_at: string | null;
@@ -172,6 +174,8 @@ export function toItem(row: ItemRow): Item {
     zIndex: Math.trunc(num(row.z_index, 0)),
     colour: oneOf<NoteColour>(row.colour, NOTE_COLOURS, 'neutral'),
     pinned: fromSqlBool(row.pinned),
+    project: row.project === null || row.project.trim() === '' ? null : row.project,
+    bundleId: row.bundle_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     archivedAt: row.archived_at,

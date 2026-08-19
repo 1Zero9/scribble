@@ -43,6 +43,7 @@ interface DeskState {
 
   selection: Uuid[];
   editingItemId: Uuid | null;
+  selectedStrokeId: Uuid | null;
 
   drawer: DrawerData;
 
@@ -78,16 +79,26 @@ interface DeskState {
   purgeItems: (ids: readonly Uuid[]) => Promise<void>;
   flush: () => Promise<void>;
 
+  /** Joins two notes into a collapsed stack, or adds one to an existing stack. */
+  bundleItems: (draggedId: Uuid, targetId: Uuid) => Promise<void>;
+  /** Fans a collapsed stack's notes back out into individually placed cards. */
+  expandBundle: (bundleId: Uuid) => Promise<void>;
+
   setSelection: (ids: readonly Uuid[]) => void;
   toggleSelection: (id: Uuid) => void;
   clearSelection: () => void;
   setEditingItem: (id: Uuid | null) => void;
+  selectStroke: (id: Uuid | null) => void;
   bringToFront: (id: Uuid) => void;
 
   setViewport: (viewport: Viewport) => void;
   resetViewport: () => void;
 
   addInkStroke: (stroke: Omit<InkStroke, 'createdAt' | 'updatedAt' | 'deletedAt'>) => Promise<void>;
+  updateInkStroke: (
+    id: Uuid,
+    patch: Partial<Pick<InkStroke, 'colour' | 'width' | 'points'>>,
+  ) => void;
   eraseInk: (ids: readonly Uuid[]) => Promise<void>;
   undoInk: () => Promise<void>;
   redoInk: () => Promise<void>;
@@ -156,6 +167,7 @@ export const useDeskStore = create<DeskState>((set, get) => {
       viewport: { x: pad.viewportX, y: pad.viewportY, zoom: clampZoom(pad.zoom) },
       selection: [],
       editingItemId: null,
+      selectedStrokeId: null,
       inkUndo: [],
       inkRedo: [],
     });
@@ -165,6 +177,20 @@ export const useDeskStore = create<DeskState>((set, get) => {
   function activePad(): Pad | undefined {
     const { pads, activePadId } = get();
     return pads.find((pad) => pad.id === activePadId);
+  }
+
+  /** Leaves the deskpad with no pad open, rather than conjuring a blank replacement. */
+  function clearActivePad(): void {
+    set({
+      activePadId: null,
+      items: [],
+      ink: [],
+      selection: [],
+      editingItemId: null,
+      selectedStrokeId: null,
+      inkUndo: [],
+      inkRedo: [],
+    });
   }
 
   return {
@@ -177,6 +203,7 @@ export const useDeskStore = create<DeskState>((set, get) => {
     viewport: { x: 0, y: 0, zoom: 1 },
     selection: [],
     editingItemId: null,
+    selectedStrokeId: null,
     drawer: { pads: [], deletedItems: [], archivedItems: [], recentItems: [] },
     inkUndo: [],
     inkRedo: [],
@@ -295,9 +322,8 @@ export const useDeskStore = create<DeskState>((set, get) => {
       const pads = await store.pads.list();
       set({ pads });
       if (get().activePadId === id) {
-        const next = pads[0] ?? (await store.pads.create({ name: null }));
-        set({ pads: await store.pads.list() });
-        await loadPad(next.id);
+        if (pads[0]) await loadPad(pads[0].id);
+        else clearActivePad();
       }
       useUiStore.getState().announce('Pad archived. You can restore it from the Drawer.');
       await get().refreshDrawer();
@@ -309,9 +335,8 @@ export const useDeskStore = create<DeskState>((set, get) => {
       const pads = await store.pads.list();
       set({ pads });
       if (get().activePadId === id) {
-        const next = pads[0] ?? (await store.pads.create({ name: null }));
-        set({ pads: await store.pads.list() });
-        await loadPad(next.id);
+        if (pads[0]) await loadPad(pads[0].id);
+        else clearActivePad();
       }
       useUiStore.getState().notify('Pad moved to recently deleted.', 'info', {
         label: 'Undo',
@@ -436,6 +461,7 @@ export const useDeskStore = create<DeskState>((set, get) => {
         y: item.y + 24,
         zIndex: zIndex++,
         pinned: false,
+        bundleId: null,
       }));
 
       const created = await store.items.createMany(copies);
@@ -504,17 +530,75 @@ export const useDeskStore = create<DeskState>((set, get) => {
       await get().refreshDrawer();
     },
 
+    async bundleItems(draggedId, targetId) {
+      if (draggedId === targetId) return;
+      const target = get().items.find((item) => item.id === targetId);
+      if (!target) return;
+      const groupId = target.bundleId ?? newId();
+      const anchor = { x: target.x, y: target.y };
+
+      const store = await storage();
+      await store.items.updateMany([
+        ...(target.bundleId === groupId ? [] : [{ id: targetId, patch: { bundleId: groupId } }]),
+        { id: draggedId, patch: { bundleId: groupId, x: anchor.x, y: anchor.y } },
+      ]);
+      set((state) => ({
+        items: state.items.map((item) => {
+          if (item.id === targetId) return { ...item, bundleId: groupId };
+          if (item.id === draggedId)
+            return { ...item, bundleId: groupId, x: anchor.x, y: anchor.y };
+          return item;
+        }),
+      }));
+      useUiStore.getState().announce('Notes bundled into a stack.');
+    },
+
+    async expandBundle(bundleId) {
+      const members = get().items.filter((item) => item.bundleId === bundleId);
+      if (members.length < 2) return;
+      const patches = members.map((item, index) => ({
+        id: item.id,
+        patch: { x: item.x + index * 28, y: item.y + index * 28 },
+      }));
+      await get().updateItems(patches);
+      useUiStore.getState().announce(`${members.length} notes expanded.`);
+    },
+
     flush: () => autosave.flush(),
 
-    setSelection: (ids) => set({ selection: [...ids] }),
-    toggleSelection: (id) =>
+    setSelection: (ids) =>
       set((state) => ({
-        selection: state.selection.includes(id)
-          ? state.selection.filter((value) => value !== id)
-          : [...state.selection, id],
+        selection: [...ids],
+        // A note left editing when the selection moves elsewhere, so it never
+        // sits open and unreachable behind whatever is selected next.
+        editingItemId:
+          state.editingItemId !== null && !ids.includes(state.editingItemId)
+            ? null
+            : state.editingItemId,
+        selectedStrokeId: null,
       })),
-    clearSelection: () => set({ selection: [] }),
+    toggleSelection: (id) =>
+      set((state) => {
+        const selection = state.selection.includes(id)
+          ? state.selection.filter((value) => value !== id)
+          : [...state.selection, id];
+        return {
+          selection,
+          editingItemId:
+            state.editingItemId !== null && !selection.includes(state.editingItemId)
+              ? null
+              : state.editingItemId,
+          selectedStrokeId: null,
+        };
+      }),
+    clearSelection: () => set({ selection: [], editingItemId: null, selectedStrokeId: null }),
     setEditingItem: (id) => set({ editingItemId: id }),
+    selectStroke: (id) =>
+      set((state) => ({
+        selectedStrokeId: id,
+        selection: id !== null ? [] : state.selection,
+        editingItemId: id !== null ? null : state.editingItemId,
+      })),
 
     bringToFront(id) {
       const highest = get().items.reduce((max, item) => Math.max(max, item.zIndex), 0);
@@ -542,6 +626,15 @@ export const useDeskStore = create<DeskState>((set, get) => {
         inkUndo: [...state.inkUndo, [created]].slice(-50),
         inkRedo: [],
       }));
+    },
+
+    updateInkStroke(id, patch) {
+      set((state) => ({
+        ink: state.ink.map((stroke) => (stroke.id === id ? { ...stroke, ...patch } : stroke)),
+      }));
+      void storage()
+        .then((store) => store.ink.update(id, patch))
+        .catch(() => log.error('ink.update.failed'));
     },
 
     async eraseInk(ids) {

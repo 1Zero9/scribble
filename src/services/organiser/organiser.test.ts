@@ -20,6 +20,8 @@ function note(text: string): Item {
     zIndex: 0,
     colour: 'neutral',
     pinned: false,
+    project: null,
+    bundleId: null,
     createdAt: '2026-08-18T09:00:00.000Z',
     updatedAt: '2026-08-18T09:00:00.000Z',
     archivedAt: null,

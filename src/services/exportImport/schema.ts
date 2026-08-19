@@ -49,6 +49,8 @@ export const itemExportSchema = z.object({
   zIndex: z.number().int(),
   colour: z.enum(NOTE_COLOURS),
   pinned: z.boolean(),
+  /** Optional so bundles exported before this field existed still import. */
+  project: z.string().max(80).nullable().optional(),
   createdAt: isoDate,
   updatedAt: isoDate,
   archivedAt: isoDate.nullable(),

@@ -73,6 +73,16 @@ export const MIGRATIONS: readonly Migration[] = [
       `CREATE INDEX IF NOT EXISTS idx_ink_pad_id ON ink_strokes (pad_id, deleted_at)`,
     ],
   },
+  {
+    id: 2,
+    name: 'project_and_bundles',
+    statements: [
+      `ALTER TABLE items ADD COLUMN project TEXT`,
+      `ALTER TABLE items ADD COLUMN bundle_id TEXT`,
+      `CREATE INDEX IF NOT EXISTS idx_items_project ON items (project)`,
+      `CREATE INDEX IF NOT EXISTS idx_items_bundle_id ON items (bundle_id)`,
+    ],
+  },
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1]?.id ?? 0;

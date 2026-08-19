@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Baseline,
   Bold,
@@ -11,6 +12,7 @@ import {
   Pin,
   PinOff,
   SquareCheck,
+  Tag,
   Trash2,
 } from 'lucide-react';
 import { NOTE_COLOURS, NOTE_COLOUR_LABELS, type Item, type NoteColour } from '@/types/domain';
@@ -26,6 +28,7 @@ interface NoteToolbarProps {
   onPin: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
+  onProject: (project: string | null) => void;
 }
 
 /**
@@ -43,9 +46,11 @@ export function NoteToolbar({
   onPin,
   onDuplicate,
   onDelete,
+  onProject,
 }: NoteToolbarProps) {
   const notify = useUiStore((state) => state.notify);
   const richText = item.itemType === 'text';
+  const [draftProject, setDraftProject] = useState(item.project ?? '');
 
   function addLink(): void {
     const url = window.prompt('Web address for this link:');
@@ -132,6 +137,59 @@ export function NoteToolbar({
             />
           ))}
         </div>
+      </details>
+
+      <details className="relative">
+        <summary
+          className="sb-icon-button list-none"
+          style={{ width: 32, height: 32 }}
+          aria-label="Project"
+          title={item.project ? `Project: ${item.project}` : 'Add to a project'}
+        >
+          <Tag size={15} aria-hidden="true" />
+        </summary>
+        <form
+          className="absolute left-0 top-9 z-20 flex w-48 flex-col gap-2 rounded-[var(--sb-radius-control)] p-2"
+          style={{
+            background: 'var(--sb-surface-raised)',
+            border: '1px solid var(--sb-border)',
+            boxShadow: 'var(--sb-shadow-float)',
+          }}
+          onSubmit={(event) => {
+            event.preventDefault();
+            const trimmed = draftProject.trim();
+            onProject(trimmed === '' ? null : trimmed);
+          }}
+        >
+          <label className="sb-sr-only" htmlFor={`project-${item.id}`}>
+            Project
+          </label>
+          <input
+            id={`project-${item.id}`}
+            className="sb-input text-xs"
+            placeholder="e.g. Operation Falcon"
+            value={draftProject}
+            onChange={(event) => setDraftProject(event.target.value)}
+            maxLength={80}
+          />
+          <div className="flex items-center gap-1.5">
+            <button type="submit" className="sb-button sb-button--primary flex-1 text-xs">
+              Save
+            </button>
+            {item.project ? (
+              <button
+                type="button"
+                className="sb-button text-xs"
+                onClick={() => {
+                  setDraftProject('');
+                  onProject(null);
+                }}
+              >
+                Clear
+              </button>
+            ) : null}
+          </div>
+        </form>
       </details>
 
       <ToolbarButton

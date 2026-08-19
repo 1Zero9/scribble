@@ -46,6 +46,10 @@ export function useGlobalKeyboard(): void {
           desk.clearSelection();
           return;
         }
+        if (desk.selectedStrokeId !== null) {
+          desk.selectStroke(null);
+          return;
+        }
         if (hideOnEscape && !typing) {
           void desk.flush().then(() => hideWindow());
         }
@@ -129,6 +133,10 @@ export function useGlobalKeyboard(): void {
           if (desk.selection.length > 0) {
             event.preventDefault();
             void desk.deleteItems(desk.selection);
+          } else if (desk.selectedStrokeId !== null) {
+            event.preventDefault();
+            void desk.eraseInk([desk.selectedStrokeId]);
+            desk.selectStroke(null);
           }
           break;
         default:

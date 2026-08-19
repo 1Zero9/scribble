@@ -40,6 +40,10 @@ export interface NoteCardProps {
   onDelete: () => void;
   onNudge: (dx: number, dy: number) => void;
   onResizeBy: (dw: number, dh: number) => void;
+  onProject: (project: string | null) => void;
+  /** Set when this card represents a collapsed stack of two or more notes. */
+  bundleCount?: number;
+  onExpand?: () => void;
 }
 
 /**
@@ -65,7 +69,12 @@ export const NoteCard = memo(function NoteCard({
   onDelete,
   onNudge,
   onResizeBy,
+  onProject,
+  bundleCount = 1,
+  onExpand,
 }: NoteCardProps) {
+  const isBundle = bundleCount > 1;
+
   const format = useCallback((command: string, value?: string) => {
     document.execCommand(command, false, value);
   }, []);
@@ -75,7 +84,8 @@ export const NoteCard = memo(function NoteCard({
 
     if (event.key === 'Enter' || event.key === 'F2') {
       event.preventDefault();
-      onEdit();
+      if (isBundle) onExpand?.();
+      else onEdit();
       return;
     }
     if (event.key === 'Delete' || event.key === 'Backspace') {
@@ -99,120 +109,173 @@ export const NoteCard = memo(function NoteCard({
     else onNudge(delta[0], delta[1]);
   }
 
-  const accessibleName = `${ITEM_TYPE_LABELS[item.itemType]}: ${itemPreview(item, 60)}`;
+  const accessibleName = isBundle
+    ? `Stack of ${bundleCount} notes: ${itemPreview(item, 60)}`
+    : `${ITEM_TYPE_LABELS[item.itemType]}: ${itemPreview(item, 60)}`;
 
   return (
-    <article
-      data-testid="note-card"
-      data-item-id={item.id}
-      aria-label={accessibleName}
-      aria-selected={selected}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      onPointerDown={(event) => {
-        onSelect(event);
-        if (!editing) onBeginDrag(event);
-      }}
-      onDoubleClick={(event) => {
-        event.stopPropagation();
-        onEdit();
-      }}
-      className="absolute flex flex-col rounded-[var(--sb-radius-card)]"
-      style={{
-        left: item.x,
-        top: item.y,
-        width: item.width,
-        height: item.height,
-        zIndex: item.zIndex + (item.pinned ? 10_000 : 0),
-        background: noteBackground(item.colour),
-        border: selected ? '2px solid var(--sb-accent)' : '1px solid var(--sb-border)',
-        // Compensate for the thicker selected border so the card does not shift.
-        padding: selected ? 9 : 10,
-        boxShadow: selected ? 'var(--sb-shadow-float)' : 'var(--sb-shadow-card)',
-        cursor: editing ? 'text' : 'grab',
-        touchAction: 'none',
-      }}
-    >
-      {selected && !editing ? (
-        <NoteToolbar
-          item={item}
-          editing={editing}
-          onFormat={format}
-          onColour={onColour}
-          onPin={onPin}
-          onDuplicate={onDuplicate}
-          onDelete={onDelete}
-        />
-      ) : null}
-      {editing && item.itemType === 'text' ? (
-        <NoteToolbar
-          item={item}
-          editing
-          onFormat={format}
-          onColour={onColour}
-          onPin={onPin}
-          onDuplicate={onDuplicate}
-          onDelete={onDelete}
-        />
+    <>
+      {isBundle ? (
+        <>
+          <div
+            aria-hidden="true"
+            className="absolute rounded-[var(--sb-radius-card)]"
+            style={{
+              left: item.x + 10,
+              top: item.y + 10,
+              width: item.width,
+              height: item.height,
+              zIndex: item.zIndex - 2,
+              background: noteBackground(item.colour),
+              border: '1px solid var(--sb-border)',
+              opacity: 0.5,
+            }}
+          />
+          <div
+            aria-hidden="true"
+            className="absolute rounded-[var(--sb-radius-card)]"
+            style={{
+              left: item.x + 5,
+              top: item.y + 5,
+              width: item.width,
+              height: item.height,
+              zIndex: item.zIndex - 1,
+              background: noteBackground(item.colour),
+              border: '1px solid var(--sb-border)',
+              opacity: 0.75,
+            }}
+          />
+        </>
       ) : null}
 
-      {item.pinned ? (
-        <span
-          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ background: 'var(--sb-accent)', color: 'var(--sb-text-on-accent)' }}
-          title="Pinned"
-        >
-          <Pin size={11} aria-hidden="true" />
-          <span className="sb-sr-only">Pinned</span>
-        </span>
-      ) : null}
-
-      <div className="min-h-0 flex-1">
-        <NoteBody
-          item={item}
-          editing={editing}
-          onContentChange={onContentChange}
-          onFinish={onFinishEdit}
-        />
-      </div>
-
-      <footer
-        className="mt-1 flex shrink-0 items-center justify-between gap-2 text-[10px]"
-        style={{ color: 'var(--sb-text-subtle)' }}
+      <article
+        data-testid="note-card"
+        data-item-id={item.id}
+        aria-label={accessibleName}
+        aria-selected={selected}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onPointerDown={(event) => {
+          onSelect(event);
+          if (!editing) onBeginDrag(event);
+        }}
+        onDoubleClick={(event) => {
+          event.stopPropagation();
+          if (isBundle) onExpand?.();
+          else onEdit();
+        }}
+        className="absolute flex flex-col rounded-[var(--sb-radius-card)]"
+        style={{
+          left: item.x,
+          top: item.y,
+          width: item.width,
+          height: item.height,
+          zIndex: item.zIndex + (item.pinned ? 10_000 : 0),
+          background: noteBackground(item.colour),
+          border: selected ? '2px solid var(--sb-accent)' : '1px solid var(--sb-border)',
+          // Compensate for the thicker selected border so the card does not shift.
+          padding: selected ? 9 : 10,
+          boxShadow: selected ? 'var(--sb-shadow-float)' : 'var(--sb-shadow-card)',
+          cursor: editing ? 'text' : 'grab',
+          touchAction: 'none',
+        }}
       >
-        {/* The colour name appears in text so colour is never the only signal. */}
-        <span className="truncate">
-          {item.colour === 'neutral'
-            ? ITEM_TYPE_LABELS[item.itemType]
-            : NOTE_COLOUR_LABELS[item.colour]}
-        </span>
-        <time dateTime={item.updatedAt} title={`Created ${formatRelative(item.createdAt)}`}>
-          {formatRelative(item.updatedAt)}
-        </time>
-      </footer>
+        {selected && !editing && !isBundle ? (
+          <NoteToolbar
+            item={item}
+            editing={editing}
+            onFormat={format}
+            onColour={onColour}
+            onPin={onPin}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
+            onProject={onProject}
+          />
+        ) : null}
+        {editing && item.itemType === 'text' ? (
+          <NoteToolbar
+            item={item}
+            editing
+            onFormat={format}
+            onColour={onColour}
+            onPin={onPin}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
+            onProject={onProject}
+          />
+        ) : null}
 
-      {selected
-        ? RESIZE_HANDLES.map((handle) => (
-            <span
-              key={handle}
-              role="presentation"
-              onPointerDown={(event) => {
-                event.stopPropagation();
-                onBeginResize(handle as ResizeHandle, event);
-              }}
-              className="absolute h-2.5 w-2.5 rounded-sm"
-              style={{
-                ...HANDLE_POSITION[handle as ResizeHandle],
-                background: 'var(--sb-surface-raised)',
-                border: '1px solid var(--sb-accent)',
-                cursor: HANDLE_CURSORS[handle as ResizeHandle],
-                touchAction: 'none',
-              }}
-              aria-label={`Resize from ${HANDLE_LABELS[handle as ResizeHandle]}`}
-            />
-          ))
-        : null}
-    </article>
+        {item.pinned ? (
+          <span
+            className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+            style={{ background: 'var(--sb-accent)', color: 'var(--sb-text-on-accent)' }}
+            title="Pinned"
+          >
+            <Pin size={11} aria-hidden="true" />
+            <span className="sb-sr-only">Pinned</span>
+          </span>
+        ) : null}
+
+        {isBundle ? (
+          <span
+            className="absolute -left-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-medium"
+            style={{ background: 'var(--sb-accent)', color: 'var(--sb-text-on-accent)' }}
+            title={`Stack of ${bundleCount} notes — double-click to expand`}
+          >
+            {bundleCount}
+          </span>
+        ) : null}
+
+        <div className="min-h-0 flex-1">
+          <NoteBody
+            item={item}
+            editing={editing}
+            onContentChange={onContentChange}
+            onFinish={onFinishEdit}
+          />
+        </div>
+
+        <footer
+          className="mt-1 flex shrink-0 items-center justify-between gap-2 text-[10px]"
+          style={{ color: 'var(--sb-text-subtle)' }}
+        >
+          {/* The colour name appears in text so colour is never the only signal. */}
+          <span className="truncate">
+            {isBundle
+              ? `Stack of ${bundleCount}`
+              : item.colour === 'neutral'
+                ? ITEM_TYPE_LABELS[item.itemType]
+                : NOTE_COLOUR_LABELS[item.colour]}
+            {item.project ? ` · ${item.project}` : ''}
+          </span>
+          <time dateTime={item.updatedAt} title={`Created ${formatRelative(item.createdAt)}`}>
+            {formatRelative(item.updatedAt)}
+          </time>
+        </footer>
+
+        {selected && !isBundle
+          ? RESIZE_HANDLES.map((handle) => (
+              <span
+                key={handle}
+                role="presentation"
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                  onBeginResize(handle as ResizeHandle, event);
+                }}
+                className="absolute h-2.5 w-2.5 rounded-sm"
+                style={{
+                  ...HANDLE_POSITION[handle as ResizeHandle],
+                  background: 'var(--sb-surface-raised)',
+                  border: '1px solid var(--sb-accent)',
+                  cursor: HANDLE_CURSORS[handle as ResizeHandle],
+                  touchAction: 'none',
+                }}
+                aria-label={`Resize from ${HANDLE_LABELS[handle as ResizeHandle]}`}
+              />
+            ))
+          : null}
+      </article>
+    </>
   );
 });
 

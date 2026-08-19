@@ -26,8 +26,11 @@ export interface PadRepository {
   count(): Promise<number>;
 }
 
-export type NewItem = Omit<Item, 'createdAt' | 'updatedAt' | 'archivedAt' | 'deletedAt'> &
-  Partial<Pick<Item, 'createdAt' | 'updatedAt'>>;
+export type NewItem = Omit<
+  Item,
+  'createdAt' | 'updatedAt' | 'archivedAt' | 'deletedAt' | 'project' | 'bundleId'
+> &
+  Partial<Pick<Item, 'createdAt' | 'updatedAt' | 'project' | 'bundleId'>>;
 export type ItemPatch = Partial<Omit<Item, 'id' | 'padId' | 'createdAt'>>;
 
 export interface ItemRepository {
@@ -55,10 +58,12 @@ export interface ItemRepository {
 
 export type NewInkStroke = Omit<InkStroke, 'createdAt' | 'updatedAt' | 'deletedAt'> &
   Partial<Pick<InkStroke, 'createdAt' | 'updatedAt'>>;
+export type InkPatch = Partial<Pick<InkStroke, 'colour' | 'width' | 'points'>>;
 
 export interface InkRepository {
   listByPad(padId: Uuid): Promise<InkStroke[]>;
   create(stroke: NewInkStroke): Promise<InkStroke>;
+  update(id: Uuid, patch: InkPatch): Promise<void>;
   softDelete(ids: readonly Uuid[]): Promise<void>;
   restore(ids: readonly Uuid[]): Promise<void>;
   purge(ids: readonly Uuid[]): Promise<void>;

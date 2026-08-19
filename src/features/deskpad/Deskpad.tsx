@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_ITEM_HEIGHT,
   DEFAULT_ITEM_WIDTH,
@@ -14,6 +14,7 @@ import {
 import {
   clampZoom,
   normaliseRect,
+  overlapFraction,
   rectsIntersect,
   screenToPad,
   snapPoint,
@@ -74,11 +75,14 @@ export function Deskpad() {
   const clearSelection = useDeskStore((state) => state.clearSelection);
   const setEditingItem = useDeskStore((state) => state.setEditingItem);
   const createItem = useDeskStore((state) => state.createItem);
+  const createPad = useDeskStore((state) => state.createPad);
   const updateItem = useDeskStore((state) => state.updateItem);
   const updateItems = useDeskStore((state) => state.updateItems);
   const duplicateItems = useDeskStore((state) => state.duplicateItems);
   const deleteItems = useDeskStore((state) => state.deleteItems);
   const bringToFront = useDeskStore((state) => state.bringToFront);
+  const bundleItems = useDeskStore((state) => state.bundleItems);
+  const expandBundle = useDeskStore((state) => state.expandBundle);
 
   const tool = useUiStore((state) => state.tool);
   const notify = useUiStore((state) => state.notify);
@@ -92,6 +96,55 @@ export function Deskpad() {
   const [inkWidth, setInkWidth] = useState(3);
 
   const snapEnabled = pad?.snapEnabled ?? true;
+
+  // Drawing or erasing sits visually above every note; a note left mid-edit
+  // when the tool changes would stay open but unreachable underneath it.
+  useEffect(() => {
+    if (tool !== 'select') setEditingItem(null);
+  }, [tool, setEditingItem]);
+
+  // A bundle is collapsed for as long as its members sit at the same position —
+  // no separate flag is stored, so dragging members apart (via expandBundle) or
+  // back together (via the normal drag-to-overlap gesture) is naturally reversible.
+  const visibleItems = useMemo(() => {
+    const byBundle = new Map<Uuid, Item[]>();
+    for (const item of items) {
+      if (item.bundleId === null) continue;
+      const list = byBundle.get(item.bundleId);
+      if (list) list.push(item);
+      else byBundle.set(item.bundleId, [item]);
+    }
+
+    const hidden = new Set<Uuid>();
+    const counts = new Map<Uuid, number>();
+    for (const members of byBundle.values()) {
+      if (members.length < 2) continue;
+      const first = members[0];
+      if (!first) continue;
+      const collapsed = members.every((m) => m.x === first.x && m.y === first.y);
+      if (!collapsed) continue;
+      const representative = members.reduce((a, b) => (b.zIndex > a.zIndex ? b : a));
+      for (const member of members) if (member.id !== representative.id) hidden.add(member.id);
+      counts.set(representative.id, members.length);
+    }
+
+    return items
+      .filter((item) => !hidden.has(item.id))
+      .map((item) => ({ item, bundleCount: counts.get(item.id) ?? 1 }));
+  }, [items]);
+
+  /** Merges a dragged note into whatever it was dropped onto, if anything. */
+  const maybeBundle = useCallback(
+    (draggedId: Uuid) => {
+      const dragged = items.find((candidate) => candidate.id === draggedId);
+      if (!dragged) return;
+      const target = items.find(
+        (candidate) => candidate.id !== draggedId && overlapFraction(dragged, candidate) > 0.6,
+      );
+      if (target) void bundleItems(draggedId, target.id);
+    },
+    [items, bundleItems],
+  );
 
   const toPad = useCallback(
     (clientX: number, clientY: number): Point => {
@@ -165,7 +218,11 @@ export function Deskpad() {
     if (current.kind === 'marquee') {
       const rect = normaliseRect(current.origin, point);
       setMarquee(rect);
-      const hits = items.filter((item) => rectsIntersect(rect, item)).map((item) => item.id);
+      // Only visible cards can be marquee-selected; a collapsed stack's hidden
+      // members select as one, via their representative card.
+      const hits = visibleItems
+        .filter(({ item }) => rectsIntersect(rect, item))
+        .map(({ item }) => item.id);
       setSelection(current.additive ? [...new Set([...selection, ...hits])] : hits);
       return;
     }
@@ -214,13 +271,29 @@ export function Deskpad() {
           patch: { x: item.x, y: item.y, width: item.width, height: item.height },
         }));
       void updateItems(patches);
+
+      // Only a single dragged note (not a multi-select move) can start a bundle.
+      const draggedId = affected[0];
+      if (current.kind === 'move' && current.moved && affected.length === 1 && draggedId) {
+        maybeBundle(draggedId);
+      }
     }
   }
 
   const beginDrag = useCallback(
     (item: Item, event: React.PointerEvent) => {
       if (tool !== 'select' || event.button !== 0) return;
-      const ids = selection.includes(item.id) ? selection : [item.id];
+      let ids = selection.includes(item.id) ? selection : [item.id];
+      // Dragging a collapsed stack by its visible card moves every note in it.
+      if (ids.length === 1 && item.bundleId !== null) {
+        const mates = items.filter(
+          (candidate) =>
+            candidate.bundleId === item.bundleId &&
+            candidate.x === item.x &&
+            candidate.y === item.y,
+        );
+        if (mates.length > 1) ids = mates.map((mate) => mate.id);
+      }
       const positions = new Map<Uuid, Point>();
       for (const candidate of items) {
         if (ids.includes(candidate.id))
@@ -402,13 +475,15 @@ export function Deskpad() {
             transformOrigin: '0 0',
           }}
         >
-          {items.map((item) => (
+          {visibleItems.map(({ item, bundleCount }) => (
             <NoteCard
               key={item.id}
               item={item}
               selected={selection.includes(item.id)}
               editing={editing === item.id}
               snapEnabled={snapEnabled}
+              bundleCount={bundleCount}
+              onExpand={item.bundleId ? () => void expandBundle(item.bundleId!) : undefined}
               onSelect={(event) => {
                 if (event.shiftKey) toggleSelection(item.id);
                 else if (!selection.includes(item.id)) setSelection([item.id]);
@@ -421,6 +496,7 @@ export function Deskpad() {
               onContentChange={(content: ItemContent) => updateItem(item.id, { content })}
               onColour={(colour: NoteColour) => updateItem(item.id, { colour }, true)}
               onPin={() => updateItem(item.id, { pinned: !item.pinned }, true)}
+              onProject={(project) => updateItem(item.id, { project }, true)}
               onDuplicate={() => void duplicateItems([item.id])}
               onDelete={() => void deleteItems(selection.includes(item.id) ? selection : [item.id])}
               onNudge={(dx, dy) => updateItem(item.id, { x: item.x + dx, y: item.y + dy }, true)}
@@ -467,7 +543,11 @@ export function Deskpad() {
         />
       ) : null}
 
-      {items.length === 0 ? <EmptyState onCreate={() => createNoteAt({ x: 120, y: 120 })} /> : null}
+      {pad === null ? (
+        <NoPadState onCreate={() => void createPad()} />
+      ) : items.length === 0 ? (
+        <EmptyState onCreate={() => createNoteAt({ x: 120, y: 120 })} />
+      ) : null}
 
       {tool !== 'select' ? (
         <InkToolbar
@@ -479,6 +559,22 @@ export function Deskpad() {
       ) : null}
 
       <SelectionActions />
+    </div>
+  );
+}
+
+function NoPadState({ onCreate }: { onCreate: () => void }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      <div className="pointer-events-auto max-w-sm text-center">
+        <p className="text-base font-medium">No pad is open.</p>
+        <p className="mt-1 text-sm" style={{ color: 'var(--sb-text-muted)' }}>
+          Start a new pad, or open one from the Drawer.
+        </p>
+        <button type="button" className="sb-button sb-button--primary mt-4" onClick={onCreate}>
+          New pad
+        </button>
+      </div>
     </div>
   );
 }

@@ -19,6 +19,8 @@ function makeItem(overrides: Partial<Item> = {}): Item {
     zIndex: 1,
     colour: 'sand',
     pinned: false,
+    project: null,
+    bundleId: null,
     createdAt: '2026-08-18T09:00:00.000Z',
     updatedAt: '2026-08-18T09:00:00.000Z',
     archivedAt: null,
@@ -43,6 +45,7 @@ function renderCard(overrides: Partial<Item> = {}, props: Record<string, unknown
     onDelete: vi.fn(),
     onNudge: vi.fn(),
     onResizeBy: vi.fn(),
+    onProject: vi.fn(),
   };
 
   render(
@@ -137,6 +140,7 @@ describe('NoteCard', () => {
         onDelete={noop}
         onNudge={noop}
         onResizeBy={noop}
+        onProject={noop}
       />,
     );
     expect(screen.queryByLabelText(/Resize from bottom right/)).not.toBeInTheDocument();
@@ -159,6 +163,7 @@ describe('NoteCard', () => {
         onDelete={noop}
         onNudge={noop}
         onResizeBy={noop}
+        onProject={noop}
       />,
     );
     expect(screen.getByLabelText(/Resize from bottom right/)).toBeInTheDocument();

@@ -108,6 +108,10 @@ export interface Item {
   zIndex: number;
   colour: NoteColour;
   pinned: boolean;
+  /** A free-text label joining related notes across pads, e.g. a case name. */
+  project: string | null;
+  /** Notes sharing a bundle sit collapsed into one stack when at the same position. */
+  bundleId: Uuid | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   archivedAt: Timestamp | null;

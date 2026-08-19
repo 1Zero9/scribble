@@ -70,6 +70,14 @@ export function rectsIntersect(a: Rect, b: Rect): boolean {
   return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
 }
 
+/** The overlap area as a fraction of the smaller rectangle's area, 0 to 1. */
+export function overlapFraction(a: Rect, b: Rect): number {
+  const overlapWidth = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+  const overlapHeight = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+  const smaller = Math.min(a.width * a.height, b.width * b.height);
+  return smaller <= 0 ? 0 : (overlapWidth * overlapHeight) / smaller;
+}
+
 /** Normalises a drag-selection marquee described by two corners. */
 export function normaliseRect(start: Point, end: Point): Rect {
   return {

@@ -2,7 +2,7 @@ import type { InkStroke, Uuid } from '@/types/domain';
 import { now } from '@/lib/time';
 import type { Database } from '../database';
 import { toInkStroke, type InkRow } from './mappers';
-import type { InkRepository } from './types';
+import type { InkPatch, InkRepository } from './types';
 
 const SELECT = `SELECT id, pad_id, colour, width, points_json, created_at, updated_at, deleted_at
   FROM ink_strokes`;
@@ -44,6 +44,32 @@ export function createInkRepository(db: Database): InkRepository {
         ],
       );
       return record;
+    },
+
+    async update(id, patch: InkPatch) {
+      const assignments: string[] = [];
+      const params: (string | number)[] = [];
+
+      if ('colour' in patch && patch.colour !== undefined) {
+        assignments.push('colour = ?');
+        params.push(patch.colour);
+      }
+      if ('width' in patch && patch.width !== undefined) {
+        assignments.push('width = ?');
+        params.push(patch.width);
+      }
+      if ('points' in patch && patch.points !== undefined) {
+        assignments.push('points_json = ?');
+        params.push(JSON.stringify(patch.points));
+      }
+      if (assignments.length === 0) return;
+      assignments.push('updated_at = ?');
+      params.push(now());
+
+      await db.execute(`UPDATE ink_strokes SET ${assignments.join(', ')} WHERE id = ?`, [
+        ...params,
+        id,
+      ]);
     },
 
     async softDelete(ids) {
